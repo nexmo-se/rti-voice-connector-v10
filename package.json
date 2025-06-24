@@ -1,0 +1,22 @@
+{
+  "name": "rti-voice-connector-v10",
+  "version": "1.0.0",
+  "description": "Real-Time Interpretation Connector",
+  "license": "Apache-2.0",
+  "author": "Tony Chan",
+  "type": "commonjs",
+  "main": "rti-voice-connector-*.cjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@deepgram/sdk": "^4.5.1",
+    "axios": "^1.10.0",
+    "deepl-node": "^1.18.0",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-ws": "^5.0.2",
+    "moment": "^2.30.1",
+    "uuid": "^11.1.0"
+  }
+}
