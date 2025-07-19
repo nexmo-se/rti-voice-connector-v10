@@ -51,15 +51,16 @@ console.log ("\nSupported languages dictionary:", supportedLang);
 // }
 
 //--- ASR engine - Deepgram ---
-
 const { createClient, LiveTranscriptionEvents } = require("@deepgram/sdk");
 const dgApiKey = process.env.DEEPGRAM_API_KEY;
 
 //--- Translation engine - DeepL ---
-
 const deepl = require("deepl-node");
 const dlApiKey = process.env.DEEPL_API_KEY;
 const dlTranslator = new deepl.Translator(dlApiKey);  // see if a unique instance can cope with many concurrent translations
+
+//--- User experience parameters ----
+const maxSilenceDuration = Number(process.env.MAX_SILENCE_DURATION);
 
 //--------------------------------------------------------------
 
@@ -284,6 +285,16 @@ app.ws('/socket', async (ws, req) => {
   const peerUuid = req.query.peer_uuid;
   const languageCode = req.query.language_code;  // requested ISO 639 language code or "auto"
 
+  let interimUtterance = "";
+  let completeUtterance = "";
+
+  // let minVadTimer;
+  // let maxVadTimer;
+  // let silenceCount = 0; // number of detected silence within a currently spoken utterance
+  //let previousResultTime = 0;
+
+  let vadTimer;
+
   //-- future - select ASR engine here on a per languageCode basis --
 
   //-- Deepgram as ASR engine case ---
@@ -337,41 +348,63 @@ app.ws('/socket', async (ws, req) => {
   const deepgramClient = createClient(dgApiKey);
 
   let deepgram = deepgramClient.listen.live({       
-    model: "nova-2",
-    smart_format: true,      
-    language: asrlanguageCode,  
-    // language: "multi",   
+    model: "nova-2",     
+    language: asrlanguageCode,
+    // language: "multi",
     encoding: "linear16", // NEVER CHANGE
-    sample_rate: 16000  // NEVER CHANGE
+    sample_rate: 16000,  // NEVER CHANGE
+    interim_results: true, // NEVER CHANGE
+    smart_format: false,
+    punctuate: true
   });
 
   deepgram.addListener(LiveTranscriptionEvents.Open, async () => {
     console.log("deepgram: connected");
 
     deepgram.addListener(LiveTranscriptionEvents.Transcript, async (data) => {
-      // console.log(JSON.stringify(data));
+      
+      console.log('\n' + JSON.stringify(data));
+      
       const transcript = data.channel.alternatives[0].transcript;
 
       if (transcript != '') {
 
-        console.log('\ntranscript:', transcript);
+        // if (maxVadTimer) {
+        //   clearTimeout(maxVadTimer); // reset timer if not yet expired
+        // }
 
-        // axios.post(webhookUrl,  
-        //   {
-        //     "transcript": transcript,
-        //     "uuid": peerUuid
-        //   },
-        //   {
-        //   headers: {
-        //     "Content-Type": 'application/json'
-        //   }
-        // });
+        // if (minVadTimer) {
+        //   clearTimeout(minVadTimer); // reset timer if not yet expired
+        // }
 
-        const callerNumber = '12995550101'; // dummy value for tests
-        const aiEngine = 'DG'; // parameter will be removed
-        
-        // submit transcript of original speech for translation processing
-        sendTranslation(transcript, languageCode, originalUuid, callerNumber, webhookUrl, userName, userId, confName, customQueryParams);
+        // clear VAD timer for both partial transctipts and final transcripts
+        if (vadTimer) {
+          clearTimeout(vadTimer); // reset timer if not yet expired
+        }
+
+        if (data.is_final) {
+
+          interimUtterance = interimUtterance + " " + transcript; // concatenate new transcript
+          console.log('\n>>> partial transcript:', interimUtterance, '\n');
+
+          vadTimer = setTimeout( () => {
+
+            console.log('\n>>> Max VAD timer trigerred');
+
+            completeUtterance = interimUtterance;
+            interimUtterance = "";
+
+            console.log('\n>>> complete transcript:', completeUtterance, '\n');
+
+            const callerNumber = '12995550101'; // dummy value for tests
+
+            // submit transcript of original speech for translation processing
+            sendTranslation(completeUtterance, languageCode, originalUuid, callerNumber, webhookUrl, userName, userId, confName, customQueryParams);
+          
+          }, maxSilenceDuration);
+
+        }
+
       }   
 
     });
