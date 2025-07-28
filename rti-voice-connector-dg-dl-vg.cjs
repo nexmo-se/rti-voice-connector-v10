@@ -59,6 +59,9 @@ const deepl = require("deepl-node");
 const dlApiKey = process.env.DEEPL_API_KEY;
 const dlTranslator = new deepl.Translator(dlApiKey);  // see if a unique instance can cope with many concurrent translations
 
+//--- Record calls ---
+const recordCalls = process.env.RECORD_CALLS?.toLowerCase() === 'true';
+
 //--- User experience parameters ----
 const maxSilenceDuration = Number(process.env.MAX_SILENCE_DURATION);
 
@@ -281,24 +284,43 @@ async function sendTranslation(text, languageCode, uuid, callerNumber, webhookUr
 
 app.ws('/socket', async (ws, req) => {
 
-  const originalUuid = req.query.original_uuid; 
+  // const originalUuid = req.query.original_uuid; 
   const peerUuid = req.query.peer_uuid;
   const languageCode = req.query.language_code;  // requested ISO 639 language code or "auto"
 
+  //-- if call recording enabled ---
+  let audioFileName;
+
+  if (recordCalls) {
+    // audioFileName = './recordings/rec_' + peerUuid + '_' + moment(Date.now()).format('YYYY_MM_DD_HH_mm_ss_SSS') + '.raw'; // using local time
+    audioFileName = './recordings/rec_' + peerUuid + '_' + moment(Date.now()).format('YYYY_MM_DD_HH_mm_ss') + '.raw'; // using local time
+
+    let file;
+    try {
+      file = await fsp.writeFile(audioFileName, '');
+    } catch(e) {
+      console.log("Error creating file:", audioFileName, e);
+    }
+
+
+  }
+
   let interimUtterance = "";
   let completeUtterance = "";
-
-  // let minVadTimer;
-  // let maxVadTimer;
-  // let silenceCount = 0; // number of detected silence within a currently spoken utterance
-  //let previousResultTime = 0;
-
   let vadTimer;
 
   //-- future - select ASR engine here on a per languageCode basis --
 
   //-- Deepgram as ASR engine case ---
-  const asrlanguageCode = deepgramAsrLang[languageCode]["sttLanguageCode"];
+
+  // debug - temporary
+  // const asrlanguageCode = deepgramAsrLang[languageCode]["sttLanguageCode"];
+  let asrlanguageCode = deepgramAsrLang[languageCode]["sttLanguageCode"];
+
+  //-- for nova-3 - debug - test
+  // if (asrlanguageCode != 'en-US') {
+  //   asrlanguageCode = 'multi';
+  // }
 
   // WIP - close connection if requested language code is not supported -
   // if (!supportedLang[languageCode]) { // requested language code is not supported
@@ -312,7 +334,7 @@ app.ws('/socket', async (ws, req) => {
   console.log('>>> vadFeedback:', vadFeedback);
 
   console.log('>>> websocket connected with');
-  console.log('original call uuid:', originalUuid);
+  // console.log('original call uuid:', originalUuid);
   console.log('peer uuid:', peerUuid);
   console.log('VAD feedback for barge-in:', vadFeedback);
 
@@ -347,6 +369,10 @@ app.ws('/socket', async (ws, req) => {
   console.log('Opening client connection to DeepGram');
   const deepgramClient = createClient(dgApiKey);
 
+  // debug
+  console.log('>>> zone 05 - asrlanguageCode:', asrlanguageCode);
+
+
   let deepgram = deepgramClient.listen.live({       
     model: "nova-2",     
     language: asrlanguageCode,
@@ -354,7 +380,7 @@ app.ws('/socket', async (ws, req) => {
     encoding: "linear16", // NEVER CHANGE
     sample_rate: 16000,  // NEVER CHANGE
     interim_results: true, // NEVER CHANGE
-    smart_format: false,
+    smart_format: true,
     punctuate: true
   });
 
@@ -399,8 +425,10 @@ app.ws('/socket', async (ws, req) => {
             const callerNumber = '12995550101'; // dummy value for tests
 
             // submit transcript of original speech for translation processing
-            sendTranslation(completeUtterance, languageCode, originalUuid, callerNumber, webhookUrl, userName, userId, confName, customQueryParams);
+            // sendTranslation(completeUtterance, languageCode, originalUuid, callerNumber, webhookUrl, userName, userId, confName, customQueryParams);
+            sendTranslation(completeUtterance, languageCode, peerUuid, callerNumber, webhookUrl, userName, userId, confName, customQueryParams);
           
+
           }, maxSilenceDuration);
 
         }
@@ -450,6 +478,14 @@ app.ws('/socket', async (ws, req) => {
 
       if (deepgram.getReadyState() === 1 /* OPEN */) {
         deepgram.send(msg);
+
+        if (recordCalls) {
+          // record what has been sent to DG
+          fsp.appendFile(audioFileName, msg, 'binary')
+          .then(res => null)
+          .catch(err => console.log("error writing to file", audioFileName, err))
+        }
+
       } else if (deepgram.getReadyState() >= 2 /* 2 = CLOSING, 3 = CLOSED */) {
         // console.log("ws: data couldn't be sent to deepgram");
         null
