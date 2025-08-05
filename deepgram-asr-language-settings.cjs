@@ -117,17 +117,17 @@ addToDeepgramAsrLang (dg_asr_trTR);
 const dg_asr_ukUA = ['uk-UA', 'uk']; // Ukrainian
 addToDeepgramAsrLang (dg_asr_ukUA);
 
-const dg_asr_yue = ['yue', 'zh-HK']; // Chinese Cantonese
-addToDeepgramAsrLang (dg_asr_yue);
+const dg_asr_yueCN = ['yue-CN', 'zh']; // Chinese Cantonese - Mainland
+addToDeepgramAsrLang (dg_asr_yueCN);
 
-const dg_asr_yueHantHK = ['yue-Hant-HK', 'zh-HK']; // Chinese Cantonese
-addToDeepgramAsrLang (dg_asr_yueHantHK);
+const dg_asr_yueHK = ['yue-HK', 'zh-HK']; // Chinese Cantonese - Hong Kong
+addToDeepgramAsrLang (dg_asr_yueHK);
 
-const dg_asr_zh = ['zh', 'zh']; // Chinese Mandarin
-addToDeepgramAsrLang (dg_asr_zh);
+const dg_asr_zhCN = ['zh-CN', 'zh']; // Chinese Mandarin - Mainland
+addToDeepgramAsrLang (dg_asr_zhCN);
 
-const dg_asr_zhHantTW = ['zh-Hant-TW', 'zh-TW']; // Chinese Mandarin - Taiwan
-addToDeepgramAsrLang (dg_asr_zhHantTW);
+const dg_asr_zhTW = ['zh-TW', 'zh-TW']; // Chinese Mandarin - Taiwan
+addToDeepgramAsrLang (dg_asr_zhTW);
 
 //------------------------------------
 

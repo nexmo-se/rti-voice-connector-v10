@@ -20,16 +20,22 @@ const axios = require('axios');
 //-- AI engines and languages --
 
 const deepgramAsrLang = require('./deepgram-asr-language-settings.cjs');
-console.log ("\nDeepgram ASR dictionary:", deepgramAsrLang);
+console.log ("\nDeepgram STT dictionary:", deepgramAsrLang);
 
-const deepLTranslationLang = require('./deepl_translation_language_settings.cjs');
-console.log ("\nDeepL Translation dictionary:", deepLTranslationLang);
+// const deepLTranslationLang = require('./deepl_translation_language_settings.cjs');
+// console.log ("\nDeepL Translation dictionary:", deepLTranslationLang);
+
+const languageioTranslationLang = require('./languageio-translation-language-settings.cjs');
+console.log ("\nLanguageIO Translation dictionary:", languageioTranslationLang);
 
 const vonageTtsLang = require('./vonage-tts-language-settings.cjs');
 console.log ("\nVonage TTS dictionary:", vonageTtsLang);
 
-const supportedLang = require('./supported-languages-set-1.cjs');
-console.log ("\nSupported languages dictionary:", supportedLang);
+// const supportedLang = require('./supported-languages-set-1.cjs');
+// console.log ("\nSupported languages dictionary:", supportedLang);
+
+const supportedLang = require('./supported-languages-set-2.cjs');
+console.log ("\nComplete list of supported languages dictionary - Just FYI - WIP - Not yet functionally used atm:", supportedLang);
 
 // //-- test --
 
@@ -54,10 +60,15 @@ console.log ("\nSupported languages dictionary:", supportedLang);
 const { createClient, LiveTranscriptionEvents } = require("@deepgram/sdk");
 const dgApiKey = process.env.DEEPGRAM_API_KEY;
 
-//--- Translation engine - DeepL ---
-const deepl = require("deepl-node");
-const dlApiKey = process.env.DEEPL_API_KEY;
-const dlTranslator = new deepl.Translator(dlApiKey);  // see if a unique instance can cope with many concurrent translations
+// //--- Translation engine - DeepL ---
+// const deepl = require("deepl-node");
+// const dlApiKey = process.env.DEEPL_API_KEY;
+// const dlTranslator = new deepl.Translator(dlApiKey);  // see if a unique instance can cope with many concurrent translations
+
+//--- Translation engine - Language IO ---
+const lioApiKey = process.env.LANGUAGEIO_API_KEY;
+const lioTranslateUrl = process.env.LANGUAGEIO_TRANSLATE_URL;
+const lioLocaleUrl = process.env.LANGUAGEIO_LOCALE_URL;
 
 //--- Record calls ---
 const recordCalls = process.env.RECORD_CALLS?.toLowerCase() === 'true';
@@ -130,13 +141,40 @@ async function translateText(srcText, srcLanguage, dstLanguage) {
   let dstText = "";
 
   //-- srcLanguage and dstLanguage are ISO 639 language codes --
-  const sourceLanguage = deepLTranslationLang[srcLanguage]["srcTranslationLanguage"];
-  const destLanguage = deepLTranslationLang[dstLanguage]["dstTranslationLanguage"];
+  const sourceLanguage = languageioTranslationLang[srcLanguage]["srcTranslationLanguage"];
+  const destLanguage = languageioTranslationLang[dstLanguage]["dstTranslationLanguage"];
 
-  // const jsonDstText = await dlTranslator.translateText(srcText, sourceLanguage, destLanguage);
-  const jsonDstText = await dlTranslator.translateText(srcText, null, destLanguage);
-  console.log(">>> translation payload:\n", jsonDstText)
-  dstText = jsonDstText.text;
+  // const jsonDstText = await dlTranslator.translateText(srcText, null, destLanguage);
+  // console.log(">>> translation payload:\n", jsonDstText)
+  // dstText = jsonDstText.text;
+
+  const body = {
+    "sourceContent": srcText,
+    "sourceLocale": sourceLanguage,
+    "targetLocale": destLanguage,
+    "contentTypeName": "api",
+    "translationType": "machine",
+    "textType": "text"
+   };
+  console.log("body:", JSON.stringify(body));
+
+  try {
+    const output = await axios.post(lioTranslateUrl, JSON.stringify(body),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'x-api-key': lioApiKey
+        }
+      });
+
+    console.log(">>> translation output payload:\n", output.data)
+    dstText = output.data.translatedText;
+    // console.log("HTTP POST status:", status);
+  } 
+  catch (err) {
+    console.log("HTTP POST error", lioTranslateUrl, body, err);
+  }
 
   // console.log(">>> translated text:", dstText);
   return(dstText);
@@ -289,27 +327,19 @@ app.ws('/socket', async (ws, req) => {
   const languageCode = req.query.language_code;  // requested ISO 639 language code or "auto"
 
   //-- if call recording enabled ---
-  let audioFromVgFileName;
-  let audioToVgFileName;
+  let audioFileName;
 
   if (recordCalls) {
     // audioFileName = './recordings/rec_' + peerUuid + '_' + moment(Date.now()).format('YYYY_MM_DD_HH_mm_ss_SSS') + '.raw'; // using local time
-    audioFromVgFileName = './recordings/rec_' + peerUuid + '_' + moment(Date.now()).format('YYYY_MM_DD_HH_mm_ss') + '.raw'; // using local time
-    audioToVgFileName = './recordings/rec_' + peerUuid + '_' + moment(Date.now()).format('YYYY_MM_DD_HH_mm_ss') + '.raw'; // using local time
+    audioFileName = './recordings/rec_' + peerUuid + '_' + moment(Date.now()).format('YYYY_MM_DD_HH_mm_ss') + '.raw'; // using local time
 
+    let file;
     try {
-      await fsp.writeFile(audioFromVgFileName, '');
+      file = await fsp.writeFile(audioFileName, '');
     } catch(e) {
-      console.log("Error creating file", audioFromVgFileName, e);
+      console.log("Error creating file:", audioFileName, e);
     }
-    console.log('File created:', audioFromVgFileName);
 
-    try {
-      await fsp.writeFile(audioToVgFileName, '');
-    } catch(e) {
-      console.log("Error creating file", audioToVgFileName, e);
-    }
-    console.log('File created:', audioToVgFileName);
 
   }
 
@@ -397,7 +427,7 @@ app.ws('/socket', async (ws, req) => {
 
     deepgram.addListener(LiveTranscriptionEvents.Transcript, async (data) => {
       
-      console.log('\n' + JSON.stringify(data));
+      // console.log('\n' + JSON.stringify(data));
       
       const transcript = data.channel.alternatives[0].transcript;
 
@@ -489,9 +519,9 @@ app.ws('/socket', async (ws, req) => {
 
         if (recordCalls) {
           // record what has been sent to DG
-          fsp.appendFile(audioFromVgFileName, msg, 'binary')
+          fsp.appendFile(audioFileName, msg, 'binary')
           .then(res => null)
-          .catch(err => console.log("error writing to file", audioFromVgFileName, err))
+          .catch(err => console.log("error writing to file", audioFileName, err))
         }
 
       } else if (deepgram.getReadyState() >= 2 /* 2 = CLOSING, 3 = CLOSED */) {
