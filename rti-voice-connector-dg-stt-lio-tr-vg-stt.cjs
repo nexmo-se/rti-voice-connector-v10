@@ -156,7 +156,7 @@ async function translateText(srcText, srcLanguage, dstLanguage) {
     "translationType": "machine",
     "textType": "text"
    };
-  console.log("body:", JSON.stringify(body));
+  // console.log("body:", JSON.stringify(body));
 
   try {
     const output = await axios.post(lioTranslateUrl, JSON.stringify(body),
@@ -168,7 +168,7 @@ async function translateText(srcText, srcLanguage, dstLanguage) {
         }
       });
 
-    console.log(">>> translation output payload:\n", output.data)
+    // console.log(">>> translation output payload:\n", output.data)
     dstText = output.data.translatedText;
     // console.log("HTTP POST status:", status);
   } 
@@ -176,7 +176,7 @@ async function translateText(srcText, srcLanguage, dstLanguage) {
     console.log("HTTP POST error", lioTranslateUrl, body, err);
   }
 
-  // console.log(">>> translated text:", dstText);
+  console.log("\n>>> translated text:", dstText);
   return(dstText);
 }
 
@@ -184,7 +184,7 @@ async function translateText(srcText, srcLanguage, dstLanguage) {
 
 async function sendTranslation(text, languageCode, uuid, callerNumber, webhookUrl, userName, userId, confName, customParams) {  
   
-  console.log(">>> in sendTranslation function - languageCode:", languageCode);
+  // console.log(">>> in sendTranslation function - languageCode:", languageCode);
 
   if (text != '') {   
 
@@ -212,7 +212,7 @@ async function sendTranslation(text, languageCode, uuid, callerNumber, webhookUr
       }
     }     
 
-    console.log("result:", JSON.stringify(result));
+    // console.log("result:", JSON.stringify(result));
 
     try {
       const status = await axios.post(webhookUrl, JSON.stringify(result),
@@ -234,8 +234,8 @@ async function sendTranslation(text, languageCode, uuid, callerNumber, webhookUr
 
     for (const targetLanguageCode in confLang[confName]) {
 
-      console.log("targetLanguageCode:", targetLanguageCode);
-      console.log("confLang[confName][targetLanguageCode]:", confLang[confName][targetLanguageCode]);
+      // console.log("targetLanguageCode:", targetLanguageCode);
+      // console.log("confLang[confName][targetLanguageCode]:", confLang[confName][targetLanguageCode]);
 
       if (confLang[confName][targetLanguageCode] != undefined) {
 
@@ -289,7 +289,7 @@ async function sendTranslation(text, languageCode, uuid, callerNumber, webhookUr
             }
           } 
         
-          console.log("result:", JSON.stringify(result));
+          console.log("\nresult:", JSON.stringify(result));
 
           try {
             const status = await axios.post(webhookUrl, JSON.stringify(result),
@@ -407,10 +407,6 @@ app.ws('/socket', async (ws, req) => {
   console.log('Opening client connection to DeepGram');
   const deepgramClient = createClient(dgApiKey);
 
-  // debug
-  console.log('>>> zone 05 - asrlanguageCode:', asrlanguageCode);
-
-
   let deepgram = deepgramClient.listen.live({       
     model: "nova-2",     
     language: asrlanguageCode,
@@ -476,27 +472,27 @@ app.ws('/socket', async (ws, req) => {
     });
 
     deepgram.addListener(LiveTranscriptionEvents.Close, async () => {
-      console.log("deepgram: disconnected");
+      console.log("\ndeepgram: disconnected");
       console.log("participant:", userName);
       // clearInterval(keepAlive); // will be used later
       deepgram.finish();
     });
 
     deepgram.addListener(LiveTranscriptionEvents.Error, async (error) => {
-      console.log("deepgram: error received");
+      console.log("\ndeepgram: error received");
       console.error(error);
     });
 
     deepgram.addListener(LiveTranscriptionEvents.Warning, async (warning) => {
-      console.log("deepgram: warning received");
+      console.log("\ndeepgram: warning received");
       console.warn(warning);
     });
 
     deepgram.addListener(LiveTranscriptionEvents.Metadata, (data) => {
-      console.log("deepgram: metadata received");
-      console.log("ws: metadata sent to client");
-      // ws.send(JSON.stringify({ metadata: data }));
+      console.log("\ndeepgram: metadata received");
       console.log(JSON.stringify({ metadata: data }));
+      // console.log("ws: metadata sent to client");
+      // ws.send(JSON.stringify({ metadata: data }));
     });
 
   }); 
