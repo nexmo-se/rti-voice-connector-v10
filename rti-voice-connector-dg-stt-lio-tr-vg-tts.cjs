@@ -264,6 +264,7 @@ async function sendTranslation(text, languageCode, uuid, callerNumber, webhookUr
           // console.log('\n>>> Translation from ' + srcLanguage + ' to ' + targetLanguage + ": " + translation);
 
           //-- map corresponding Vonage Voice API TTS language code
+          console.log('>>> targetLanguageCode:', targetLanguageCode);
           const voiceApiLanguageCode = vonageTtsLang[targetLanguageCode]["ttsLanguageCode"];
 
           const result = {
@@ -353,6 +354,7 @@ app.ws('/socket', async (ws, req) => {
 
   // debug - temporary
   // const asrlanguageCode = deepgramAsrLang[languageCode]["sttLanguageCode"];
+  console.log('>>> languageCode:', languageCode);
   let asrlanguageCode = deepgramAsrLang[languageCode]["sttLanguageCode"];
 
   //-- for nova-3 - debug - test

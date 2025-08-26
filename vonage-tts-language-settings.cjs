@@ -78,7 +78,7 @@ addToVonageTtsLang (vg_tts_deCH);
 const vg_tts_elGR = ['el-GR', 'el-GR']; // Greek
 addToVonageTtsLang (vg_tts_elGR);
 
-const vg_tts_hiHI = ['hi-HI', 'hi-HI']; // Hindi
+const vg_tts_hiHI = ['hi-IN', 'hi-IN']; // Hindi
 addToVonageTtsLang (vg_tts_hiHI);
 
 const vg_tts_huHU = ['hu-HU', 'hu-HU']; // Hungarian

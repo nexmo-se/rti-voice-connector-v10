@@ -60,6 +60,9 @@ addToDeepgramAsrLang (dg_asr_frCA);
 const dg_asr_frFR = ['fr-FR', 'fr']; // French - France
 addToDeepgramAsrLang (dg_asr_frFR);
 
+const dg_asr_hiIN = ['hi-IN', 'hi']; // Hindi
+addToDeepgramAsrLang (dg_asr_hiIN);
+
 const dg_asr_huHU = ['hu-HU', 'hu']; // Hungarian
 addToDeepgramAsrLang (dg_asr_huHU);
 
