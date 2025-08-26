@@ -42,6 +42,9 @@ addToDeepgramAsrLang (dg_asr_enNZ);
 const dg_asr_enUS = ['en-US', 'en-US']; // English - United States
 addToDeepgramAsrLang (dg_asr_enUS);
 
+const dg_asr_es419 = ['es-419', 'es-419']; // Spanish - Mexico
+addToDeepgramAsrLang (dg_asr_es419);
+
 const dg_asr_esES = ['es-ES', 'es']; // Spanish - Spain
 addToDeepgramAsrLang (dg_asr_esES);
 

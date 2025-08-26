@@ -126,11 +126,14 @@ addToVonageTtsLang (vg_tts_ruRU);
 const vg_tts_skSK = ['sk-SK', 'sk-SK']; // Slovak
 addToVonageTtsLang (vg_tts_skSK);
 
-const vg_tts_es419 = ['es-419', 'es-419']; // Spanish - Latin America
+const vg_tts_es419 = ['es-419', 'es-MX']; // Spanish - Latin America
 addToVonageTtsLang (vg_tts_es419);
 
 const vg_tts_esES = ['es-ES', 'es-ES']; // Spanish - Spain
 addToVonageTtsLang (vg_tts_esES);
+
+const vg_tts_esMX = ['es-MX', 'es-MX']; // Spanish - Mexico
+addToVonageTtsLang (vg_tts_esMX);
 
 const vg_tts_esUS = ['es-US', 'es-US']; // Spanish - United States
 addToVonageTtsLang (vg_tts_esUS);
